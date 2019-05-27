@@ -14,9 +14,9 @@ import os
 import shutil
 
 IMSIZE = (224, 224)
-BASE_DIR = "./imnet-100"
-# BASE_DIR = "./imnet-val"
-NMAX = -1
+# BASE_DIR = "./imnet-100"
+BASE_DIR = "./imnet-val"
+NMAX = 100
 
 def mkdir_safe(path):
   if not os.path.exists(path):
@@ -123,7 +123,7 @@ def imgs2npy():
   N = len(img_fnames)
 
   raw_dir = raw_dir_from_base_dir(BASE_DIR)
-  mkdir_clean(raw_dir)
+  # mkdir_clean(raw_dir)
   mkdir_safe(raw_dir)
 
   for i, img_fname in enumerate(img_fnames):
@@ -141,7 +141,7 @@ def npy2features():
   N = len(img_fnames)
 
   features_dir = features_dir_from_base_dir(BASE_DIR)
-  mkdir_clean(features_dir)
+  # mkdir_clean(features_dir)
   mkdir_safe(features_dir)
 
   for i, img_fname in enumerate(img_fnames):
