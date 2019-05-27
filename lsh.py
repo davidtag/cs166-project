@@ -10,6 +10,7 @@ from skimage.feature import hog, daisy, orb
 from skimage.transform import resize
 from skimage.color import rgb2gray, gray2rgb
 import time
+import os
 
 IMSIZE = (224, 224)
 # IMAGE_DIR = "./imnet-100"
@@ -47,9 +48,9 @@ def daisy_get(img):
 def color_hist(img):
   nbins = 4
   bin_edges = np.linspace(0, 1, nbins+1)
-  bin_edges = np.tile(bin_edges, (3,1))
+  bin_edges = np.tile(bin_edges, (img.shape[2],1))
 
-  flat_img = img.reshape((-1,3)) # lose spatial dimension
+  flat_img = img.reshape((-1, img.shape[2] )) # lose spatial dimension
   H, edges = np.histogramdd(flat_img, bins = bin_edges)
   return H.flatten()
 
@@ -60,6 +61,9 @@ def im2vectors(im_fnames):
   for i, fname in enumerate(im_fnames):
     t0 = time.time()
     print(i, len(im_fnames))
+    vec_fname = fname + ".p"
+    if os.path.isfile(vec_fname):
+      continue
     img = misc.imread(fname)
     img = resize(img, IMSIZE, anti_aliasing=True)
     if (img.ndim == 2):
@@ -79,7 +83,6 @@ def im2vectors(im_fnames):
     data['color_hist'] = color_hist(img)
     t5 = time.time()
     # print(t2-t1, t3-t2, t4-t3, t5-t4)
-    vec_fname = fname + ".p"
     with open(vec_fname, 'wb') as f:
       pickle.dump(data, f)
     t6 = time.time()
@@ -88,6 +91,7 @@ def im2vectors(im_fnames):
 def concat_vectors(im_fnames):
   vec_fnames = glob.glob(IMAGE_DIR + "/*.p")
   for i, fname in enumerate(vec_fnames):
+    t1 = time.time()
     with open(fname, 'rb') as f:
       curr = pickle.load(f)
 
@@ -101,6 +105,10 @@ def concat_vectors(im_fnames):
     hogs[i,:] = curr['hog']
     # daisy[i,:] = curr['daisy']
     color_hist[i,:] = curr['color_hist']
+
+    t2 = time.time()
+    print(i, len(vec_fnames), t2 - t1)
+
 
   # pickle_write_concat_file(IMAGE_DIR + "_pc_avg", im_fnames, pc_avgs)
   pickle_write_concat_file(IMAGE_DIR + "_hog", im_fnames, hogs)
