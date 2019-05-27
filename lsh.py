@@ -16,7 +16,7 @@ import shutil
 IMSIZE = (224, 224)
 # BASE_DIR = "./imnet-100"
 BASE_DIR = "./imnet-val"
-NMAX = 100
+NMAX = 5000
 
 def mkdir_safe(path):
   if not os.path.exists(path):
