@@ -1,0 +1,4 @@
+*feature_vectors/
+*imgs_raw_npy/
+.ipynb_checkpoints/
+imnet-val/

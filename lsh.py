@@ -163,7 +163,7 @@ def npy2features():
     # data['daisy'] = daisy_get(img)
     data['color_hist'] = color_hist(img)
     # data['first_pixel'] = first_pixel(img)
-    with open(features_fname + '.p', 'wb') as f:
+    with open(features_fname, 'wb') as f:
       pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
 def concat_features():
@@ -176,7 +176,7 @@ def concat_features():
 
     features_fname = features_name_from_img_name(img_fname)
 
-    with open(features_fname + '.p', 'rb') as f:
+    with open(features_fname, 'rb') as f:
       curr = pickle.load(f)
 
     # Initialize matrices
