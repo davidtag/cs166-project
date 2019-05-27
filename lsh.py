@@ -57,13 +57,16 @@ def color_hist(img):
 def per_color_avg(im):
   return im.mean(axis=0).mean(axis=0)
 
+def first_pixel(im):
+  return im[0,0,:]
+
 def im2vectors(im_fnames):
   for i, fname in enumerate(im_fnames):
     t0 = time.time()
     print(i, len(im_fnames))
     vec_fname = fname + ".p"
-    if os.path.isfile(vec_fname):
-      continue
+    # if os.path.isfile(vec_fname):
+      # continue
     img = misc.imread(fname)
     img = resize(img, IMSIZE, anti_aliasing=True)
     if (img.ndim == 2):
@@ -82,6 +85,7 @@ def im2vectors(im_fnames):
     t4 = time.time()
     data['color_hist'] = color_hist(img)
     t5 = time.time()
+    data['first_pixel'] = first_pixel(img)
     # print(t2-t1, t3-t2, t4-t3, t5-t4)
     with open(vec_fname, 'wb') as f:
       pickle.dump(data, f)
@@ -89,7 +93,7 @@ def im2vectors(im_fnames):
     print(t6 - t0)
 
 def concat_vectors(im_fnames):
-  vec_fnames = glob.glob(IMAGE_DIR + "/*.p")
+  vec_fnames = sorted(glob.glob(IMAGE_DIR + "/*.p"))
   for i, fname in enumerate(vec_fnames):
     t1 = time.time()
     with open(fname, 'rb') as f:
@@ -99,12 +103,14 @@ def concat_vectors(im_fnames):
       # pc_avgs = np.zeros((len(vec_fnames), len(curr['per_color_avg'])))
       hogs = np.zeros((len(vec_fnames), len(curr['hog'])))
       # daisy = np.zeros((len(vec_fnames), len(curr['daisy'])))
-      color_hist = np.zeros((len(vec_fnames), len(curr['color_hist'])))
+      color_hists = np.zeros((len(vec_fnames), len(curr['color_hist'])))
+      first_pixels = np.zeros((len(vec_fnames), len(curr['first_pixel'])))
 
     # pc_avgs[i,:] = curr['per_color_avg']
     hogs[i,:] = curr['hog']
     # daisy[i,:] = curr['daisy']
-    color_hist[i,:] = curr['color_hist']
+    color_hists[i,:] = curr['color_hist']
+    first_pixels[i,:] = curr['first_pixel']
 
     t2 = time.time()
     print(i, len(vec_fnames), t2 - t1)
@@ -113,13 +119,16 @@ def concat_vectors(im_fnames):
   # pickle_write_concat_file(IMAGE_DIR + "_pc_avg", im_fnames, pc_avgs)
   pickle_write_concat_file(IMAGE_DIR + "_hog", im_fnames, hogs)
   # pickle_write_concat_file(IMAGE_DIR + "_daisy", im_fnames, daisy)
-  pickle_write_concat_file(IMAGE_DIR + "_color_hist", im_fnames, color_hist)
+  pickle_write_concat_file(IMAGE_DIR + "_color_hist", im_fnames, color_hists)
+  pickle_write_concat_file(IMAGE_DIR + "_first_pixel", im_fnames, first_pixels)
 
 ########## Test load summary data ############
-im_fnames = glob.glob(IMAGE_DIR + "/*.JPEG")
+im_fnames = sorted(glob.glob(IMAGE_DIR + "/*.JPEG"))
 im2vectors(im_fnames);
 concat_vectors(im_fnames);
-concat_fname = IMAGE_DIR + "_color_hist.p"
+concat_fname = IMAGE_DIR + "_first_pixel.p"
 with open(concat_fname, 'rb') as f:
   data = pickle.load(f)
+
+pdb.set_trace()
 
