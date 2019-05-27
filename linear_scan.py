@@ -9,6 +9,7 @@ from imageio import imread
 import os
 from pylab import get_current_fig_manager
 # from sklearn.metrics.pairwise import rbf_kernel
+import pdb
 
 
 class NN:
@@ -69,6 +70,7 @@ class NN:
 fname = "./imnet-val/color_hist-100.p"
 fname = "./imnet-val/color_hist-1000.p"
 fname = "./imnet-val/hog-1000.p"
+fname = "./imnet-val/color_hist-5000.p"
 with open(fname, 'rb') as f:
   data = pickle.load(f)
 
@@ -77,8 +79,7 @@ X = data['all_vecs'].T
 # X = X/np.linalg.norm(X,keepdims=True,axis=0)
 
 nn = NN(X, fnames)
-
-for i in range(100):
+for i in np.random.permutation(len(fnames)):
   nn.query_idx(i)
 
 
