@@ -90,7 +90,9 @@ class NN:
 # fname = "./imnet-val/color_hist-100.p"
 # fname = "./imnet-val/color_hist-1000.p"
 # fname = "./imnet-val/hog-1000.p"
-fname = "./imnet-val/color_hist-5000.p"
+# fname = "./imnet-val/color_hist-5000.p"
+# fname = "./imnet-val/color_hist-10000.p"
+fname = "./imnet-val/color_hist-20000.p"
 # fname = "./imnet-val/hog-5000.p"
 with open(fname, 'rb') as f:
   data = pickle.load(f)
