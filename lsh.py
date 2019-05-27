@@ -13,8 +13,8 @@ import time
 import os
 
 IMSIZE = (224, 224)
-# IMAGE_DIR = "./imnet-100"
-IMAGE_DIR = "./imnet-val"
+IMAGE_DIR = "./imnet-100"
+# IMAGE_DIR = "./imnet-val"
 
 def pickle_write_concat_file(fname, im_fnames, all_vecs):
   concat_data = {"fnames":im_fnames, "all_vecs": all_vecs}
