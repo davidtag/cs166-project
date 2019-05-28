@@ -13,8 +13,9 @@ import pdb
 import matplotlib.gridspec as gridspec
 from skimage.transform import resize
 
-QUERIES_PER_PLOT = 6
-PLOTS_PER_QUERY = QUERIES_PER_PLOT*3
+QUERIES_PER_PLOT = 8
+#PLOTS_PER_QUERY = QUERIES_PER_PLOT*2
+PLOTS_PER_QUERY = 16
 IMSIZE = (224, 224)
 
 
@@ -25,9 +26,11 @@ class NN:
     self.d, self.n = X.shape
     self.q = None
     self.query_count = 0
+    self.qidx = None
 
   def query_idx(self, i):
     q = X[:,i:i+1]
+    self.qidx = i
     self.query(q)
 
   def query(self, q):
@@ -80,13 +83,15 @@ class NN:
       cnt = QUERIES_PER_PLOT
 
     if cnt == 1:
-      plt.figure(figsize=(15,15))
+      plt.figure(figsize=(16,12))
       thismanager = get_current_fig_manager()
       thismanager.window.wm_geometry("+50+50")
 
     for i in range(N):
       plt.subplot(QUERIES_PER_PLOT, N, (cnt-1)*N + i+1)
       self.show_im(closest[i])
+      if i == 0:
+          plt.title(self.qidx+1)
 
       # Show anti-examples
       # plt.subplot(2,N, N + i+1)
@@ -95,7 +100,9 @@ class NN:
     plt.subplots_adjust(wspace=0.05, hspace=0)
 
     if cnt == QUERIES_PER_PLOT:
-      plt.show()
+      # plt.show()
+      #plt.savefig(time.strftime("%Y%m%d-%H%M%S"))
+      plt.savefig('./query/query ' + str(self.qidx-QUERIES_PER_PLOT+2) + '-' + str(self.qidx+1), bbox_inches='tight')
 
 
 
@@ -105,11 +112,11 @@ class NN:
 # fname = "./imnet-val/color_hist-5000.p"
 # fname = "./imnet-val/color_hist-10000.p"
 # fname = "./imnet-val/color_hist-20000.p"
-fname = "./imnet-val/color_hist-50000.p"
+# fname = "./imnet-val/color_hist-50000.p"
 
 # fname = "./imnet-val/hog-1000.p"
 # fname = "./imnet-val/hog-5000.p"
-# fname = "./imnet-val/hog-50000.p"
+fname = "./imnet-val/hog-50000.p"
 
 t1 = time.time()
 print("Loadiong pickle...")
@@ -123,11 +130,9 @@ X = data['all_vecs'].T
 # X = X/np.linalg.norm(X,keepdims=True,axis=0)
 
 nn = NN(X, fnames)
-for i in np.random.permutation(len(fnames)):
+#for i in np.random.permutation(len(fnames)):
+for i in range(len(fnames)):
   nn.query_idx(i)
-
-
-
 
 
 
