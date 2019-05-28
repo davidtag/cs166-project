@@ -12,12 +12,16 @@ from skimage.color import rgb2gray, gray2rgb
 import time
 import os
 import shutil
+import cnn
+from keras.preprocessing.image import load_img
+from keras.preprocessing.image import img_to_array
 
 IMSIZE = (224, 224)
 # BASE_DIR = "./imnet-100"
 # BASE_DIR = "./imnet-val"
-BASE_DIR = "./imnet-test"
-NMAX = -1
+BASE_DIR = "/Volumes/oddish1tb/cs166-project/imnet-val"
+# BASE_DIR = "./imnet-test"
+NMAX = 5010
 
 def mkdir_safe(path):
   if not os.path.exists(path):
@@ -65,12 +69,16 @@ def daisy_get(img):
 
 def color_hist(img):
   nbins = 4
-  bin_edges = np.linspace(0, 1, nbins+1)
+  bin_edges = np.linspace(0, 255, nbins+1)
   bin_edges = np.tile(bin_edges, (img.shape[2],1))
 
   flat_img = img.reshape((-1, img.shape[2] )) # lose spatial dimension
   H, edges = np.histogramdd(flat_img, bins = bin_edges)
   return H.flatten()
+
+def cnn_get(img, cnn_model):
+  features = cnn_model.predict(np.expand_dims(img, axis=0))
+  return features[0,:]
 
 def per_color_avg(im):
   return im.mean(axis=0).mean(axis=0)
@@ -110,7 +118,7 @@ def get_img_fnames():
   return img_fnames
 
 def standardize_img(img):
-  img = resize(img, IMSIZE, anti_aliasing=True)
+  # img = resize(img, IMSIZE, anti_aliasing=True)
   if (img.ndim == 2):
     img = gray2rgb(img)
 
@@ -118,6 +126,14 @@ def standardize_img(img):
     pdb.set_trace()
 
   return img
+
+def print_timing(t0, avg_elapsed, msg, N, i):
+  t1 = time.time()
+  elapsed = t1 - t0
+  avg_elapsed += 0.01*(elapsed - avg_elapsed)
+  remaining = (N - i)*avg_elapsed
+  print(msg + " iter: {}/{}, curr: {:5.2f} sec, avg: {:5.2f} sec, remaining: {:6.1f} minutes".format(i, N, elapsed, avg_elapsed, remaining/60.))
+  return avg_elapsed
 
 def imgs2npy():
   img_fnames = get_img_fnames()
@@ -127,27 +143,31 @@ def imgs2npy():
   # mkdir_clean(raw_dir)
   mkdir_safe(raw_dir)
 
+  avg_elapsed = 0
   for i, img_fname in enumerate(img_fnames):
-    print("imgs2npy ", BASE_DIR, i, N)
+    t0 = time.time()
 
     raw_fname = raw_name_from_img_name(img_fname)
     if os.path.isfile(raw_fname):
       continue
-    img = imread(img_fname)
+    img = img_to_array(load_img(img_fname), dtype='uint8')
     np.save(raw_fname, img, allow_pickle=False)
 
+    avg_elapsed = print_timing(t0, avg_elapsed, "imgs2npy", N, i)
 
 def npy2features():
   img_fnames = get_img_fnames()
   N = len(img_fnames)
 
+  cnn_model = cnn.cnn("mobilenet")
+  
   features_dir = features_dir_from_base_dir(BASE_DIR)
   # mkdir_clean(features_dir)
   mkdir_safe(features_dir)
 
+  avg_elapsed = 0
   for i, img_fname in enumerate(img_fnames):
     t0 = time.time()
-    print("npy2features ", BASE_DIR, i, N)
 
     raw_fname = raw_name_from_img_name(img_fname)
     features_fname = features_name_from_img_name(img_fname)
@@ -155,25 +175,30 @@ def npy2features():
       continue
     img = np.load(raw_fname)
     img = standardize_img(img)
+    reshaped_img = resize(img, IMSIZE, anti_aliasing=True)
     # plt.imshow(im)
     # plt.show()
 
     data = {}
     # data['per_color_avg'] = per_color_avg(img)
-    data['hog'] = hog_get(img)
+    # data['hog'] = hog_get(reshaped_img)
     # data['daisy'] = daisy_get(img)
-    data['color_hist'] = color_hist(img)
+    # data['color_hist'] = color_hist(reshaped_img)
     # data['first_pixel'] = first_pixel(img)
+    data['cnn'] = cnn_get(img, cnn_model)
     with open(features_fname, 'wb') as f:
       pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+  
+    avg_elapsed = print_timing(t0, avg_elapsed, "npy2features", N, i)
 
 def concat_features():
   img_fnames = get_img_fnames()
   N = len(img_fnames)
 
   concatenated = {}
+  avg_elapsed = 0
   for i, img_fname in enumerate(img_fnames):
-    print("concat_features", BASE_DIR, i, N)
+    t0 = time.time()
 
     features_fname = features_name_from_img_name(img_fname)
 
@@ -189,7 +214,10 @@ def concat_features():
     for feature_name, value in curr.items():
       concatenated[feature_name][i,:] = value
 
+    avg_elapsed = print_timing(t0, avg_elapsed, "concat", N, i)
+
   # Write concatenated data to file
+  print('Concatenating finished, saving to file...')
   for feature_name, value in concatenated.items():
     pickle_write_concat_file(BASE_DIR, feature_name, img_fnames, value)
 
@@ -205,7 +233,7 @@ print(t2-t1)
 ########## Test load summary data ############
 img_fnames = get_img_fnames()
 N = len(img_fnames)
-concat_fname = feature_fname_get('color_hist')
+concat_fname = feature_fname_get('cnn')
 with open(concat_fname, 'rb') as f:
   data = pickle.load(f)
 

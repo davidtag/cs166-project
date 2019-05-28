@@ -19,7 +19,6 @@ def filedir2batch(img_dir, NMAX):
     img_fnames = img_fnames[:NMAX]
 
   image_batch = np.zeros((NMAX, 224, 224, 3), dtype=np.uint8)
-  # print("Loading image batch")
   for i, img_fname in enumerate(img_fnames):
     original = load_img(img_fname, target_size=(224, 224))
     image_batch[i,:,:,:] = img_to_array(original)

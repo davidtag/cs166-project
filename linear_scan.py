@@ -100,9 +100,9 @@ class NN:
     plt.subplots_adjust(wspace=0.05, hspace=0)
 
     if cnt == QUERIES_PER_PLOT:
-      # plt.show()
-      #plt.savefig(time.strftime("%Y%m%d-%H%M%S"))
-      plt.savefig('./query/query ' + str(self.qidx-QUERIES_PER_PLOT+2) + '-' + str(self.qidx+1), bbox_inches='tight')
+      plt.show()
+      # plt.savefig(time.strftime("%Y%m%d-%H%M%S"))
+      # plt.savefig('./query/query ' + str(self.qidx-QUERIES_PER_PLOT+2) + '-' + str(self.qidx+1), bbox_inches='tight')
 
 
 
@@ -116,7 +116,13 @@ class NN:
 
 # fname = "./imnet-val/hog-1000.p"
 # fname = "./imnet-val/hog-5000.p"
-fname = "./imnet-val/hog-50000.p"
+# fname = "./imnet-val/hog-50000.p"
+
+# fname = "./imnet-100/cnn-100.p"
+# fname = "./imnet-val/cnn-1000.p"
+
+# fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-1000.p"
+fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-5000.p"
 
 t1 = time.time()
 print("Loadiong pickle...")
@@ -127,6 +133,7 @@ print("Complete in ", t2 - t1, " seconds")
 
 fnames = data['fnames']
 X = data['all_vecs'].T
+print(X.shape, X.min(), X.max(), X.mean())
 # X = X/np.linalg.norm(X,keepdims=True,axis=0)
 
 nn = NN(X, fnames)
