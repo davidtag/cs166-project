@@ -11,9 +11,11 @@ from pylab import get_current_fig_manager
 # from sklearn.metrics.pairwise import rbf_kernel
 import pdb
 import matplotlib.gridspec as gridspec
+from skimage.transform import resize
 
-QUERIES_PER_PLOT = 4
-PLOTS_PER_QUERY = 12
+QUERIES_PER_PLOT = 6
+PLOTS_PER_QUERY = QUERIES_PER_PLOT*3
+IMSIZE = (224, 224)
 
 
 class NN:
@@ -29,6 +31,7 @@ class NN:
     self.query(q)
 
   def query(self, q):
+    t1 = time.time()
     self.q = q
     _all = self.get_dist()
     # print(_all.mean())
@@ -36,23 +39,33 @@ class NN:
     # idx = [closest[0], closest[1], closest[2], closest[3], closest[-2], closest[1]]
 
     self.query_count += 1
+    t2 = time.time()
+    print("query took ", t2 - t1, " seconds")
     self.show_query(closest, PLOTS_PER_QUERY)
 
 
   def get_dist(self):
+    t1 = time.time()
+
     _all = []
     for i in range(self.n):
     #     ip = np.inner(q[:,0],X[:,i])
         ip = np.linalg.norm(self.q[:,0]-self.X[:,i])
         _all.append(ip)
     _all = np.array(_all)
+
+
+    t2 = time.time()
+    print("Distance calc took ", t2 - t1, " seconds")
     return _all
 
 
   def show_im(self, i):
     #print(self.X[:,i])
     full_fname = self.fnames[i]
-    plt.imshow(imread(full_fname))
+    img = imread(full_fname)
+    img = resize(img, IMSIZE, anti_aliasing=True)
+    plt.imshow(img)
     _, fname = os.path.split(full_fname)
     fname, _ = os.path.splitext(fname)
     # plt.title(fname)
@@ -79,7 +92,7 @@ class NN:
       # plt.subplot(2,N, N + i+1)
       # self.show_im(closest[-(i+1)])
 
-    plt.subplots_adjust(wspace=0.001, hspace=0)
+    plt.subplots_adjust(wspace=0.05, hspace=0)
 
     if cnt == QUERIES_PER_PLOT:
       plt.show()
@@ -89,13 +102,21 @@ class NN:
 # fname = "./imnet-100/color_hist-100.p"
 # fname = "./imnet-val/color_hist-100.p"
 # fname = "./imnet-val/color_hist-1000.p"
-# fname = "./imnet-val/hog-1000.p"
 # fname = "./imnet-val/color_hist-5000.p"
 # fname = "./imnet-val/color_hist-10000.p"
-fname = "./imnet-val/color_hist-20000.p"
+# fname = "./imnet-val/color_hist-20000.p"
+fname = "./imnet-val/color_hist-50000.p"
+
+# fname = "./imnet-val/hog-1000.p"
 # fname = "./imnet-val/hog-5000.p"
+# fname = "./imnet-val/hog-50000.p"
+
+t1 = time.time()
+print("Loadiong pickle...")
 with open(fname, 'rb') as f:
   data = pickle.load(f)
+t2 = time.time()
+print("Complete in ", t2 - t1, " seconds")
 
 fnames = data['fnames']
 X = data['all_vecs'].T
