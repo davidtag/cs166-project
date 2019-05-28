@@ -9,32 +9,64 @@ matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 import pdb
 import time
+import glob
+import os
 
-def file2batch(filename):
-  original = load_img(filename, target_size=(224, 224))
-  numpy_image = img_to_array(original)
-  image_batch = np.expand_dims(numpy_image, axis=0)
+def filedir2batch(img_dir, NMAX):
+  img_pattern = os.path.join(img_dir, '*.JPEG')
+  img_fnames = sorted(glob.glob(img_pattern))
+  if NMAX > 0:
+    img_fnames = img_fnames[:NMAX]
+
+  image_batch = np.zeros((NMAX, 224, 224, 3), dtype=np.uint8)
+  # print("Loading image batch")
+  for i, img_fname in enumerate(img_fnames):
+    original = load_img(img_fname, target_size=(224, 224))
+    image_batch[i,:,:,:] = img_to_array(original)
   return image_batch
 
-def predict(model, image_batch, preprocessor):
-  t1 = time.time()
-  processed_image = preprocessor(image_batch.copy())
-  features = model.predict(processed_image).flatten()
-  t2 = time.time()
-  print(features.shape, t2 - t1)
-  return features
+class cnn:
+  def __init__(self, name):
 
-def get_model(model_loader):
-  return model_loader(weights='imagenet', include_top=False, pooling='avg')
+    if name == "mobilenet":
+      model_loader = mobilenet.MobileNet
+      self.img_preprocessor =  mobilenet.preprocess_input
+    elif name == "vgg16":
+      model_loader = vgg16.VGG16
+      self.img_preprocessor =  vgg16.preprocess_input
+    elif name == "inception_v3":
+      model_loader = inception_v3.InceptionV3
+      self.img_preprocessor =  inception_v3.preprocess_input
+    elif name == "resnet50":
+      model_loader = resnet50.ResNet50
+      self.img_preprocessor =  resnet50.preprocess_input
+    else:
+      raise Exception("unrecognized model name: " + name)
 
-vgg_model = get_model(vgg16.VGG16)
-inception_model = get_model(inception_v3.InceptionV3)
-resnet_model = get_model(resnet50.ResNet50)
-mobilenet_model = get_model(mobilenet.MobileNet)
- 
-filename = 'imnet-100/imgs/ILSVRC2010_val_00000001.JPEG'
-image_batch = file2batch(filename)
-f1 = predict(vgg_model, image_batch, vgg16.preprocess_input) 
-f2 = predict(inception_model, image_batch, inception_v3.preprocess_input) 
-f3 = predict(resnet_model, image_batch, resnet50.preprocess_input) 
-f4 = predict(mobilenet_model, image_batch, mobilenet.preprocess_input) 
+    print("loading model " +  name)
+    t1 = time.time()
+    self.model = model_loader(weights='imagenet', include_top=False, pooling='avg')
+    t2 = time.time()
+    print("load time: ", t2 - t1)
+
+  def predict(self, image_batch):
+    processed_images = self.img_preprocessor(image_batch.copy())
+    features = self.model.predict(processed_images)
+    return features
+
+if __name__== "__main__":
+  models = []
+  models.append(cnn('vgg16'))
+  models.append(cnn('inception_v3'))
+  models.append(cnn('resnet50'))
+  models.append(cnn('mobilenet'))
+   
+  filedir = 'imnet-val/imgs/'
+  for i in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]:
+    for j in range(3):
+      t1 = time.time()
+      image_batch = filedir2batch(filedir, i)
+      for model in models:
+        model.predict(image_batch)
+      t2 = time.time()
+      print(i, t2-t1, (t2-t1)/i)
