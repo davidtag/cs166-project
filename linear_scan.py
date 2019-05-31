@@ -20,7 +20,20 @@ IMSIZE = (224, 224)
 
 
 class NN:
-  def __init__(self, X, fnames):
+  def __init__(self, fname):
+    t1 = time.time()
+    print("Loadiong pickle...")
+    with open(fname, 'rb') as f:
+      data = pickle.load(f)
+    t2 = time.time()
+    print("Complete in ", t2 - t1, " seconds")
+
+    fnames = data['fnames']
+    X = data['all_vecs'].T
+    #X = X/np.linalg.norm(X,keepdims=True,axis=0)
+    print(X.shape, X.min(), X.max(), X.mean())
+
+
     self.X = X
     self.fnames = fnames
     self.d, self.n = X.shape
@@ -29,12 +42,14 @@ class NN:
     self.qidx = None
 
   def query_idx(self, i):
-    q = X[:,i:i+1]
+    q = self.X[:,i:i+1]
     self.qidx = i
     self.query(q)
 
-  def query(self, q):
+  def query(self, q, doplot = True):
     t1 = time.time()
+    if q.ndim == 1:
+      q = np.expand_dims(q, axis=1)
     self.q = q
     _all = self.get_dist()
     # print(_all.mean())
@@ -44,7 +59,9 @@ class NN:
     self.query_count += 1
     t2 = time.time()
     print("query took ", t2 - t1, " seconds")
-    self.show_query(closest, PLOTS_PER_QUERY)
+    if doplot:
+      self.show_query(closest, PLOTS_PER_QUERY)
+    return closest
 
 
   def get_dist(self):
@@ -100,52 +117,21 @@ class NN:
     plt.subplots_adjust(wspace=0.05, hspace=0)
 
     if cnt == QUERIES_PER_PLOT:
-      # plt.show()
+      plt.show()
       # plt.savefig(time.strftime("%Y%m%d-%H%M%S"))
       plt.savefig('./query/query ' + str(self.qidx-QUERIES_PER_PLOT+2) + '-' + str(self.qidx+1), bbox_inches='tight')
 
+if __name__ == '__main__':
+
+  fname = "./imnet-val/color_hist-50000.p"
+  # fname = "./imnet-val/hog-50000.p"
+  # fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-50000.p"
 
 
-# fname = "./imnet-100/color_hist-100.p"
-# fname = "./imnet-val/color_hist-100.p"
-# fname = "./imnet-val/color_hist-1000.p"
-# fname = "./imnet-val/color_hist-5000.p"
-# fname = "./imnet-val/color_hist-10000.p"
-# fname = "./imnet-val/color_hist-20000.p"
-# fname = "./imnet-val/color_hist-50000.p"
-
-# fname = "./imnet-val/hog-1000.p"
-# fname = "./imnet-val/hog-5000.p"
-# fname = "./imnet-val/hog-50000.p"
-
-# fname = "./imnet-100/cnn-100.p"
-# fname = "./imnet-val/cnn-1000.p"
-
-# fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-1000.p"
-# fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-5000.p"
-# fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-14000.p"
-# fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-38000.p"
-# fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-50000.p"
-
-# fname = "/Volumes/oddish1tb/cs166-project/imnet-test/cnn-100.p"
-fname = "/Volumes/oddish1tb/cs166-project/imnet-test/cnn-2000.p"
-
-t1 = time.time()
-print("Loadiong pickle...")
-with open(fname, 'rb') as f:
-  data = pickle.load(f)
-t2 = time.time()
-print("Complete in ", t2 - t1, " seconds")
-
-fnames = data['fnames']
-X = data['all_vecs'].T
-#X = X/np.linalg.norm(X,keepdims=True,axis=0)
-print(X.shape, X.min(), X.max(), X.mean())
-
-nn = NN(X, fnames)
-# for i in np.random.permutation(len(fnames)):
-for i in range(len(fnames)):
-  nn.query_idx(i)
+  nn = NN(fname)
+  # for i in np.random.permutation(len(fnames)):
+  for i in range(nn.n):
+    nn.query_idx(i)
 
 
 

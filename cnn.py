@@ -49,6 +49,8 @@ class cnn:
     print("load time: ", t2 - t1)
 
   def predict(self, image_batch):
+    if image_batch.ndim == 3:
+      image_batch = np.expand_dims(image_batch, axis=0)
     processed_images = self.img_preprocessor(image_batch.copy())
     features = self.model.predict(processed_images)
     return features

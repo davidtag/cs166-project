@@ -52,10 +52,8 @@ def plot_features(image, feature_image):
   plt.show()
 
 def hog_get(img):
-  try:
-    fd, hog_img = hog(img, orientations=8, pixels_per_cell=(16, 16), cells_per_block=(1, 1), visualize=True, multichannel=True)
-  except:
-    pdb.set_trace()
+  fd, hog_img = hog(img, orientations=8, pixels_per_cell=(16, 16), cells_per_block=(1, 1), visualize=True, multichannel=True)
+
   # fd, hog_img = hog(img, visualize=True, multichannel=True)
   # print(fd.shape)
   # plot_features(img, hog_img)
@@ -70,7 +68,7 @@ def daisy_get(img):
 
 def color_hist(img):
   nbins = 4
-  bin_edges = np.linspace(0, 255, nbins+1)
+  bin_edges = np.linspace(0, 1, nbins+1)
   bin_edges = np.tile(bin_edges, (img.shape[2],1))
 
   flat_img = img.reshape((-1, img.shape[2] )) # lose spatial dimension
@@ -180,15 +178,20 @@ def npy2features():
     # plt.imshow(im)
     # plt.show()
 
-    data = {}
-    # data['per_color_avg'] = per_color_avg(img)
-    # data['hog'] = hog_get(reshaped_img)
-    # data['daisy'] = daisy_get(img)
-    data['color_hist'] = color_hist(reshaped_img)
-    # data['first_pixel'] = first_pixel(img)
-    data['cnn'] = cnn_get(img, cnn_model)
-    with open(features_fname, 'wb') as f:
-      pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+    try: 
+      data = {}
+      # data['per_color_avg'] = per_color_avg(img)
+      # data['hog'] = hog_get(reshaped_img)
+      # data['daisy'] = daisy_get(img)
+      data['color_hist'] = color_hist(reshaped_img)
+      # data['first_pixel'] = first_pixel(img)
+      data['cnn'] = cnn_get(img, cnn_model)
+      with open(features_fname, 'wb') as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+    except Exception as e:
+      print("Failed to featurize image " + img_fname)
+      print(e)
+
 
     avg_elapsed = print_timing(t0, avg_elapsed, "npy2features", N, i)
 
@@ -223,18 +226,20 @@ def concat_features():
     pickle_write_concat_file(BASE_DIR, feature_name, img_fnames, value)
 
 
-########## Run Main ############
-t1 = time.time()
-imgs2npy()
-npy2features();
-concat_features();
-t2 = time.time()
-print(t2-t1)
+if __name__ == '__main__':
 
-########## Test load summary data ############
-img_fnames = get_img_fnames()
-N = len(img_fnames)
-concat_fname = feature_fname_get('cnn')
-with open(concat_fname, 'rb') as f:
-  data = pickle.load(f)
+  ########## Run Main ############
+  t1 = time.time()
+  imgs2npy()
+  npy2features();
+  concat_features();
+  t2 = time.time()
+  print(t2-t1)
+
+  ########## Test load summary data ############
+  img_fnames = get_img_fnames()
+  N = len(img_fnames)
+  concat_fname = feature_fname_get('cnn')
+  with open(concat_fname, 'rb') as f:
+    data = pickle.load(f)
 
