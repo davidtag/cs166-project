@@ -13,9 +13,9 @@ import pdb
 import matplotlib.gridspec as gridspec
 from skimage.transform import resize
 
-QUERIES_PER_PLOT = 8
+QUERIES_PER_PLOT = 6
 #PLOTS_PER_QUERY = QUERIES_PER_PLOT*2
-PLOTS_PER_QUERY = 16
+PLOTS_PER_QUERY = 10
 IMSIZE = (224, 224)
 
 
@@ -100,9 +100,9 @@ class NN:
     plt.subplots_adjust(wspace=0.05, hspace=0)
 
     if cnt == QUERIES_PER_PLOT:
-      plt.show()
+      # plt.show()
       # plt.savefig(time.strftime("%Y%m%d-%H%M%S"))
-      # plt.savefig('./query/query ' + str(self.qidx-QUERIES_PER_PLOT+2) + '-' + str(self.qidx+1), bbox_inches='tight')
+      plt.savefig('./query/query ' + str(self.qidx-QUERIES_PER_PLOT+2) + '-' + str(self.qidx+1), bbox_inches='tight')
 
 
 
@@ -122,7 +122,13 @@ class NN:
 # fname = "./imnet-val/cnn-1000.p"
 
 # fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-1000.p"
-fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-5000.p"
+# fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-5000.p"
+# fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-14000.p"
+# fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-38000.p"
+# fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-50000.p"
+
+# fname = "/Volumes/oddish1tb/cs166-project/imnet-test/cnn-100.p"
+fname = "/Volumes/oddish1tb/cs166-project/imnet-test/cnn-2000.p"
 
 t1 = time.time()
 print("Loadiong pickle...")
@@ -133,11 +139,11 @@ print("Complete in ", t2 - t1, " seconds")
 
 fnames = data['fnames']
 X = data['all_vecs'].T
+#X = X/np.linalg.norm(X,keepdims=True,axis=0)
 print(X.shape, X.min(), X.max(), X.mean())
-# X = X/np.linalg.norm(X,keepdims=True,axis=0)
 
 nn = NN(X, fnames)
-#for i in np.random.permutation(len(fnames)):
+# for i in np.random.permutation(len(fnames)):
 for i in range(len(fnames)):
   nn.query_idx(i)
 

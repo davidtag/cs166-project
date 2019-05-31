@@ -19,9 +19,10 @@ from keras.preprocessing.image import img_to_array
 IMSIZE = (224, 224)
 # BASE_DIR = "./imnet-100"
 # BASE_DIR = "./imnet-val"
-BASE_DIR = "/Volumes/oddish1tb/cs166-project/imnet-val"
+# BASE_DIR = "/Volumes/oddish1tb/cs166-project/imnet-val"
+BASE_DIR = "/Volumes/oddish1tb/cs166-project/imnet-test"
 # BASE_DIR = "./imnet-test"
-NMAX = 5010
+NMAX = -1
 
 def mkdir_safe(path):
   if not os.path.exists(path):
@@ -160,7 +161,7 @@ def npy2features():
   N = len(img_fnames)
 
   cnn_model = cnn.cnn("mobilenet")
-  
+
   features_dir = features_dir_from_base_dir(BASE_DIR)
   # mkdir_clean(features_dir)
   mkdir_safe(features_dir)
@@ -183,12 +184,12 @@ def npy2features():
     # data['per_color_avg'] = per_color_avg(img)
     # data['hog'] = hog_get(reshaped_img)
     # data['daisy'] = daisy_get(img)
-    # data['color_hist'] = color_hist(reshaped_img)
+    data['color_hist'] = color_hist(reshaped_img)
     # data['first_pixel'] = first_pixel(img)
     data['cnn'] = cnn_get(img, cnn_model)
     with open(features_fname, 'wb') as f:
       pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
-  
+
     avg_elapsed = print_timing(t0, avg_elapsed, "npy2features", N, i)
 
 def concat_features():
