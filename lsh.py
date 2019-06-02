@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import time
+import pdb
 
 class LSH:
     def __init__(self, X, b, M, B=50):
@@ -199,14 +200,27 @@ class LSH:
         ans = [None for _ in range(m)]
         for i in range(m):
             c = np.array(list(candidates[i])) #indices into X
+            # pdb.set_trace()
             if refine == "hamming":
-                hd = np.sum(self.H_data[:,c] != H_q,axis=0) #hamming distance
+                print(self.H_data.shape, c.shape)
+                # t1 = time.time()
+                zz = self.H_data[:,c]
+                # t2 = time.time()
+                hd = np.sum(zz != H_q,axis=0) #hamming distance
                 hd_argsort = np.argsort(hd)[:k] #sort increasing
                 top_k = c[hd_argsort]
+                # t3 = time.time()
+                # print(t2-t1, t3-t2)
             elif refine == "innerprod":
-                ip = (q[:,i:i+1].T@self.X[:,c])[0] #inner products
+                print(self.X.shape, c.shape)
+                # t1 = time.time()
+                zz = self.X[:,c]
+                # t2 = time.time()
+                ip = (q[:,i:i+1].T@zz)[0] #inner products
                 ip_argsort = np.argsort(ip)[::-1][:k] #sort decreasing
                 top_k = c[ip_argsort]
+                # t3 = time.time()
+                # print(t2-t1, t3-t2)
             else:
                 raise ValueError("Refinement method must be based on Hamming Distance or Inner Product.")
             ans[i] = top_k

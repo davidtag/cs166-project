@@ -13,11 +13,12 @@ import pdb
 import matplotlib.gridspec as gridspec
 from skimage.transform import resize
 
-QUERIES_PER_PLOT = 6
+QUERIES_PER_PLOT = 4
 #PLOTS_PER_QUERY = QUERIES_PER_PLOT*2
 PLOTS_PER_QUERY = 10
 IMSIZE = (224, 224)
 
+# plt.ion()
 
 class NN:
   def __init__(self, fname):
@@ -44,9 +45,10 @@ class NN:
   def query_idx(self, i):
     q = self.X[:,i:i+1]
     self.qidx = i
-    self.query(q)
+    qimg = self.read_im_by_idx(i)
+    self.query(q, qimg)
 
-  def query(self, q, doplot = True):
+  def query(self, q, qimg, doplot = True):
     t1 = time.time()
     if q.ndim == 1:
       q = np.expand_dims(q, axis=1)
@@ -60,7 +62,7 @@ class NN:
     t2 = time.time()
     print("query took ", t2 - t1, " seconds")
     if doplot:
-      self.show_query(closest, PLOTS_PER_QUERY)
+      self.show_query(closest, PLOTS_PER_QUERY, qimg)
     return closest
 
 
@@ -80,20 +82,23 @@ class NN:
     return _all
 
 
-  def show_im(self, i):
+  def read_im_by_idx(self, i):
     #print(self.X[:,i])
     full_fname = self.fnames[i]
     img = imread(full_fname)
+    return img
+
+  def show_im(self, img):
     img = resize(img, IMSIZE, anti_aliasing=True)
     plt.imshow(img)
-    _, fname = os.path.split(full_fname)
-    fname, _ = os.path.splitext(fname)
+    # _, fname = os.path.split(full_fname)
+    # fname, _ = os.path.splitext(fname)
     # plt.title(fname)
     plt.axis('off')
     plt.gca().set_aspect('equal')
 
-
-  def show_query(self, closest, N):
+  def show_query(self, closest, N, query_img):
+    print(self.query_count)
 
     cnt = self.query_count % QUERIES_PER_PLOT
     if cnt == 0:
@@ -104,10 +109,13 @@ class NN:
       thismanager = get_current_fig_manager()
       thismanager.window.wm_geometry("+50+50")
 
-    for i in range(N):
-      plt.subplot(QUERIES_PER_PLOT, N, (cnt-1)*N + i+1)
-      self.show_im(closest[i])
-      if i == 0:
+    plt.subplot(QUERIES_PER_PLOT, N, (cnt-1)*N + 1)
+    self.show_im(query_img)
+
+    for i in range(N-1):
+      plt.subplot(QUERIES_PER_PLOT, N, (cnt-1)*N + i+2)
+      self.show_im(self.read_im_by_idx(closest[i]))
+      if self.qidx and i == 0:
           plt.title(self.qidx+1)
 
       # Show anti-examples
@@ -119,13 +127,15 @@ class NN:
     if cnt == QUERIES_PER_PLOT:
       plt.show()
       # plt.savefig(time.strftime("%Y%m%d-%H%M%S"))
-      plt.savefig('./query/query ' + str(self.qidx-QUERIES_PER_PLOT+2) + '-' + str(self.qidx+1), bbox_inches='tight')
+      # plt.savefig('./query/query ' + str(self.qidx-QUERIES_PER_PLOT+2) + '-' + str(self.qidx+1), bbox_inches='tight')
 
 if __name__ == '__main__':
 
-  fname = "./imnet-val/color_hist-50000.p"
+  # fname = "./imnet-val/color_hist-50000.p"
   # fname = "./imnet-val/hog-50000.p"
   # fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-50000.p"
+  # fname = "/Volumes/oddish1tb/cs166-project/imnet-test/cnn-1000.p"
+  fname = "./imnet-test-1000/cnn-1000.p"
 
 
   nn = NN(fname)
