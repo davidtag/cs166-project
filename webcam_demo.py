@@ -39,7 +39,6 @@ def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
     # return the resized image
     return resized
 
-
 IMSIZE = (224, 224)
 DISPLAY_SIZE = 600
 fname1 = "./imnet-val/cnn-50000.p"
@@ -60,6 +59,7 @@ while(True):
     ret, frame = cap.read()
 
     frame = image_resize(frame, width = DISPLAY_SIZE)
+    # frame = cv2.flip(frame, 0)
 
     # Display the resulting frame
     cv2.imshow('frame',frame)
@@ -71,17 +71,17 @@ while(True):
   elif x == 32: # space bar
     # pause
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-    q1 = cnn_model.predict(img).flatten()
-
     reshaped_img = resize(img, IMSIZE, anti_aliasing=True)
+
+    q1 = cnn_model.predict(reshaped_img*255).flatten()
+
     q2 = featurize.color_hist(reshaped_img)
 
 
-    closest1 = nn1.query(q1, False )
-    closest2 = nn2.query(q2, False )
+    closest1 = nn1.query(q1, reshaped_img, False )
+    closest2 = nn2.query(q2, reshaped_img, False )
 
-    for j in range(2):
+    for j in range(1):
       for i in range(4):
         if j == 0:
           closest = closest1

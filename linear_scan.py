@@ -13,7 +13,7 @@ import pdb
 import matplotlib.gridspec as gridspec
 from skimage.transform import resize
 
-QUERIES_PER_PLOT = 4
+QUERIES_PER_PLOT = 1
 #PLOTS_PER_QUERY = QUERIES_PER_PLOT*2
 PLOTS_PER_QUERY = 10
 IMSIZE = (224, 224)
@@ -131,17 +131,26 @@ class NN:
 
 if __name__ == '__main__':
 
-  # fname = "./imnet-val/color_hist-50000.p"
-  # fname = "./imnet-val/hog-50000.p"
-  # fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-50000.p"
-  # fname = "/Volumes/oddish1tb/cs166-project/imnet-test/cnn-1000.p"
-  fname = "./imnet-test-1000/cnn-1000.p"
+  # db_fname = "./imnet-val/color_hist-50000.p"
+  # db_fname = "./imnet-val/hog-50000.p"
+  db_fname = "/Volumes/oddish1tb/cs166-project/imnet-val/cnn-50000.p"
+  # db_fname = "/Volumes/oddish1tb/cs166-project/imnet-test/cnn-1000.p"
+  query_fname = "./imnet-test-1000/cnn-1000.p"
+  # db_fname = "./imnet-test-1000/cnn-1000.p"
 
 
-  nn = NN(fname)
+  nn_q = NN(query_fname)
+  nn_db = NN(db_fname)
   # for i in np.random.permutation(len(fnames)):
-  for i in range(nn.n):
-    nn.query_idx(i)
+  for i in range(nn_q.n):
+    # nn_db.query_idx(i)
+
+    q = nn_q.X[:,i:i+1]
+    qimg = nn_q.read_im_by_idx(i)
+    nn_db.qidx = i
+    nn_db.query(q, qimg)
+
+
 
 
 

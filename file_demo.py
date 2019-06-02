@@ -26,11 +26,13 @@ cnn_model = cnn.cnn("mobilenet")
 
 
 while True:
-  file_path = filedialog.askopenfilename()
+  # file_path = filedialog.askopenfilename()
+  file_path = "~/Pictures/Lightroom CC Saved Photos/Ngoro 2 cut 2/_MG_0925.jpg"
   img = imread(file_path)
-  # reshaped_img = resize(img, IMSIZE, anti_aliasing=True)
+  reshaped_img = resize(img, IMSIZE, anti_aliasing=True)
   # q = featurize.color_hist(reshaped_img)
 
-  q = cnn_model.predict(img).flatten()
-
-  closest = nn.query(q, img, doplot=True )
+  q1 = cnn_model.predict(reshaped_img*255).flatten()
+  # q2 = cnn_model.predict(img).flatten()
+  # pdb.set_trace()
+  closest = nn.query(q1, reshaped_img, doplot=True )
