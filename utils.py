@@ -94,12 +94,12 @@ def ndcg(sims,sims_dec,k,c):
     #Gain for Supplied Choices
     w_c = get_weights(len(c))
     s_c = sims[c]
-    gain_c = np.inner(s_c,w_c)
+    gain_c = np.inner(100**s_c,w_c)
     
     #Optimal Gain
     w = get_weights(k)
     s_opt = sims_dec[:k]
-    gain_opt = np.inner(s_opt,w)
+    gain_opt = np.inner(100**s_opt,w)
     
     #Ratio
     ndcg = gain_c/gain_opt

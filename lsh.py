@@ -3,7 +3,7 @@ import copy
 import time
 
 class LSH:
-    def __init__(self, X, b, M, B):
+    def __init__(self, X, b, M): #, B):
         """
         Initialize an LSH class with a dataset X
         and hyperparameters b and M.
@@ -24,10 +24,10 @@ class LSH:
         # Check Arguments
         self.b = int(b)
         self.M = int(M)
-        self.B = int(B/2)
+        #self.B = int(B/2)
         assert(self.b >= 10 and self.b <= 400)
         assert(self.M >= 1  and self.M <= 100)
-        assert(self.B >= 0  and self.B <=300)
+        #assert(self.B >= 0  and self.B <=300)
         
         # Store local copy of inputs vectors : (d,n)
         # Normalize data as cosine similarity is invariant
@@ -68,7 +68,10 @@ class LSH:
         assert(self.V_data[i,self.V_data_sort_idx[i][j]] == self.V_data_sort_val[i,j])
         
         # Store offset column for use in queries
-        self.offt = np.array([np.arange(-self.B,self.B+1,1)]).T
+        #self.offt = np.array([np.arange(-self.B,self.B+1,1)]).T
+        
+        # Store a random permutation
+        self.data_permute = np.random.permutation(self.n)
     
     # Hash of Data : (b,n)
     def _get_hash(self,X):
@@ -138,7 +141,7 @@ class LSH:
         V = (H_permute*pos).sum(axis=1)
         return V
           
-    def approx_top_k(self,q,k,refine="hamming"):
+    def approx_top_k(self,q,k,L,refine="hamming"):
         """
         Returns the top-k matches in the dataset
         for a query q.
@@ -157,6 +160,10 @@ class LSH:
         d,m = q.shape
         assert(d == self.d)
         assert(refine in ["hamming","innerprod"])
+        
+        L = int(L)
+        assert(L >=0 and L<=500)
+        offt = np.array([np.arange(-L,L+1,1)]).T
         
         # Hash the query : (b,m) 
         H_q = self._get_hash(q)
@@ -177,7 +184,7 @@ class LSH:
             
             # Include candidates near the bin-search match : (B,m) 
             # Each column is the matches for a query
-            val_idx = np.repeat(self.offt,m,axis=-1) + val_idx_0 #broadcast the row
+            val_idx = np.repeat(offt,m,axis=-1) + val_idx_0 #broadcast the row
             val_idx = np.maximum(val_idx,0)
             val_idx = np.minimum(val_idx,self.n-1)
             
@@ -211,6 +218,16 @@ class LSH:
         if m == 1:
             return ans[0]
         return ans
+    
+    def random_top_k(self,k):
+        return self.data_permute[:k]
+    
+    def randompp_top_k(self,q,k,L):
+        c = self.data_permute[:(self.M*(2*L+1))]
+        ip = (q.T@self.X[:,c])[0] #inner products
+        ip_argsort = np.argsort(ip)[::-1][:k] #sort decreasing
+        top_k = c[ip_argsort]
+        return top_k
     
     def exact_top_k(self,q,k):
         ip = (q.T@self.X)[0] #inner products
