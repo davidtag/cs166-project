@@ -42,12 +42,66 @@ class query:
     def exact_top_k(self):
         return self.model.exact_top_k(self.query_features, self.k)
     
+    def ndcg(self, ranks):
+        return  ndcg(self.sims,self.sims_dec,self.k,ranks)
+    
     def get_distances(self):
         self.sims,self.sims_dec,self.sims_ranked = cos_sim_ordered(self.model.X, self.query_features)
        
         self.H_q = self.model._get_hash(self.query_features)
         self.hdist,self.hdist_inc,self.hdist_ranked = hamming_dist_ordered(self.model.H_data, self.H_q)
                 
+    def time_and_compare(self, N_queries, N_neighbor_candidates=None, k_report=None):
+        times = np.zeros((N_queries))
+        
+        ndcg_0_opt      = np.zeros((N_queries))
+        ndcg_1_hd       = np.zeros((N_queries))
+        ndcg_2_lsh_hd   = np.zeros((N_queries))
+        ndcg_3_lsh_ip   = np.zeros((N_queries))
+        ndcg_4_random   = np.zeros((N_queries))
+        ndcg_5_randompp = np.zeros((N_queries))
+        
+        for q_index in range(N_queries):            
+            self.query_idx(q_index, N_neighbor_candidates, k_report)
+            t1 = time.time()
+            rank_3_lsh_ip   = self.approx_top_k(refine="innerprod")
+            times[q_index] = time.time() - t1
+            
+            #Get Ranks
+            self.get_distances()
+            rank_0_opt      = self.sims_ranked[:self.k]
+            rank_1_hd       = self.hdist_ranked[:self.k]
+            rank_2_lsh_hd   = self.approx_top_k(refine="hamming")
+            rank_4_random   = self.random_top_k()
+            rank_5_randompp = self.randompp_top_k()
+#             assert((self.exact_top_k() == rank_0_opt).all())
+
+            #Compute NDCG Scores
+            ndcg_0_opt[q_index]      = self.ndcg(rank_0_opt)
+            ndcg_1_hd[q_index]       = self.ndcg(rank_1_hd)
+            ndcg_2_lsh_hd[q_index]   = self.ndcg(rank_2_lsh_hd)
+            ndcg_3_lsh_ip[q_index]   = self.ndcg(rank_3_lsh_ip)
+            ndcg_4_random[q_index]   = self.ndcg(rank_4_random)
+            ndcg_5_randompp[q_index] = self.ndcg(rank_5_randompp)
+            
+
+        self.ndcg_all   = [
+            ndcg_4_random.mean(),
+            ndcg_5_randompp.mean(),
+            ndcg_1_hd.mean(),
+            ndcg_2_lsh_hd.mean(),
+            ndcg_3_lsh_ip.mean(),
+            ndcg_0_opt.mean()
+        ]
+        self.ndcg_names = ["Random",
+                           "Random w/ \nSimilarity Refinement",
+                           "Linear Hamming",
+                           "LSH w/ \nHamming Refinement",
+                           "LSH w/ \nSimilarity Refinement",
+                           "Linear Similarity"]
+    
+        return times.mean(), ndcg_3_lsh_ip.mean()
+    
     def ndcg_analysis(self):
         assert self.sims is not None
         assert self.sims_dec is not None
@@ -57,9 +111,8 @@ class query:
         assert self.hdist_ranked is not None
 
         #Get Ranks
-        k = self.k
-        rank_0_opt      = self.sims_ranked[:k]
-        rank_1_hd       = self.hdist_ranked[:k]
+        rank_0_opt      = self.sims_ranked[:self.k]
+        rank_1_hd       = self.hdist_ranked[:self.k]
         rank_2_lsh_hd   = self.approx_top_k(refine="hamming")
         rank_3_lsh_ip   = self.approx_top_k(refine="innerprod")
         rank_4_random   = self.random_top_k()
@@ -67,12 +120,12 @@ class query:
         assert((self.exact_top_k() == rank_0_opt).all())
 
         #Compute NDCG Scores
-        ndcg_0_opt      = ndcg(self.sims,self.sims_dec,k,rank_0_opt)
-        ndcg_1_hd       = ndcg(self.sims,self.sims_dec,k,rank_1_hd)
-        ndcg_2_lsh_hd   = ndcg(self.sims,self.sims_dec,k,rank_2_lsh_hd)
-        ndcg_3_lsh_ip   = ndcg(self.sims,self.sims_dec,k,rank_3_lsh_ip)
-        ndcg_4_random   = ndcg(self.sims,self.sims_dec,k,rank_4_random)
-        ndcg_5_randompp = ndcg(self.sims,self.sims_dec,k,rank_5_randompp)
+        ndcg_0_opt      = self.ndcg(rank_0_opt)
+        ndcg_1_hd       = self.ndcg(rank_1_hd)
+        ndcg_2_lsh_hd   = self.ndcg(rank_2_lsh_hd)
+        ndcg_3_lsh_ip   = self.ndcg(rank_3_lsh_ip)
+        ndcg_4_random   = self.ndcg(rank_4_random)
+        ndcg_5_randompp = self.ndcg(rank_5_randompp)
 
         self.ndcg_all   = [ndcg_4_random,ndcg_5_randompp,ndcg_1_hd,ndcg_2_lsh_hd,ndcg_3_lsh_ip,ndcg_0_opt]
         self.ndcg_names = ["Random","Random w/ \nSimilarity Refinement","Linear Hamming","LSH w/ \nHamming Refinement",
