@@ -3,3 +3,9 @@
 .ipynb_checkpoints/
 archive/
 imnet-val/imgs/
+query/
+queries/
+imnet-test/
+imnet-val/cnn-50000.p
+imnet-val/hog-50000.p
+__pycache__/
