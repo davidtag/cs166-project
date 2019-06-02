@@ -20,9 +20,10 @@ IMSIZE = (224, 224)
 # BASE_DIR = "./imnet-100"
 # BASE_DIR = "./imnet-val"
 # BASE_DIR = "/Volumes/oddish1tb/cs166-project/imnet-val"
-BASE_DIR = "/Volumes/oddish1tb/cs166-project/imnet-test"
+# BASE_DIR = "/Volumes/oddish1tb/cs166-project/imnet-test"
 # BASE_DIR = "./imnet-test"
-NMAX = -1
+BASE_DIR = "./imnet-test-1000"
+NMAX = 1000
 
 def mkdir_safe(path):
   if not os.path.exists(path):
@@ -52,10 +53,8 @@ def plot_features(image, feature_image):
   plt.show()
 
 def hog_get(img):
-  try:
-    fd, hog_img = hog(img, orientations=8, pixels_per_cell=(16, 16), cells_per_block=(1, 1), visualize=True, multichannel=True)
-  except:
-    pdb.set_trace()
+  fd, hog_img = hog(img, orientations=8, pixels_per_cell=(16, 16), cells_per_block=(1, 1), visualize=True, multichannel=True)
+
   # fd, hog_img = hog(img, visualize=True, multichannel=True)
   # print(fd.shape)
   # plot_features(img, hog_img)
@@ -70,7 +69,7 @@ def daisy_get(img):
 
 def color_hist(img):
   nbins = 4
-  bin_edges = np.linspace(0, 255, nbins+1)
+  bin_edges = np.linspace(0, 1, nbins+1)
   bin_edges = np.tile(bin_edges, (img.shape[2],1))
 
   flat_img = img.reshape((-1, img.shape[2] )) # lose spatial dimension
@@ -79,7 +78,9 @@ def color_hist(img):
 
 def cnn_get(img, cnn_model):
   features = cnn_model.predict(np.expand_dims(img, axis=0))
-  return features[0,:]
+  features = features[0,:]
+  print(features.min(), features.max(), features.mean())
+  return features
 
 def per_color_avg(im):
   return im.mean(axis=0).mean(axis=0)
@@ -113,9 +114,17 @@ def features_name_from_img_name(img_fname):
 def get_img_fnames():
   img_dir = img_dir_from_base_dir(BASE_DIR)
   img_pattern = os.path.join(img_dir, '*.JPEG')
-  img_fnames = sorted(glob.glob(img_pattern))
-  if NMAX > 0:
-    img_fnames = img_fnames[:NMAX]
+
+  # img_fnames = sorted(glob.glob(img_pattern))
+  # if NMAX > 0:
+  #   img_fnames = img_fnames[:NMAX]
+
+  img_fnames = []
+  for i in range(NMAX):
+    #ILSVRC2010_test_00000026.JPEG
+    fname = "ILSVRC2010_test_{:08d}.JPEG".format(i+1)
+    fname = os.path.join(img_dir, fname)
+    img_fnames.append(fname)
   return img_fnames
 
 def standardize_img(img):
@@ -150,6 +159,7 @@ def imgs2npy():
 
     raw_fname = raw_name_from_img_name(img_fname)
     if os.path.isfile(raw_fname):
+      avg_elapsed = print_timing(t0, avg_elapsed, "imgs2npy", N, i)
       continue
     img = img_to_array(load_img(img_fname), dtype='uint8')
     np.save(raw_fname, img, allow_pickle=False)
@@ -169,10 +179,12 @@ def npy2features():
   avg_elapsed = 0
   for i, img_fname in enumerate(img_fnames):
     t0 = time.time()
+    print(i)
 
     raw_fname = raw_name_from_img_name(img_fname)
     features_fname = features_name_from_img_name(img_fname)
     if os.path.isfile(features_fname):
+      avg_elapsed = print_timing(t0, avg_elapsed, "npy2features", N, i)
       continue
     img = np.load(raw_fname)
     img = standardize_img(img)
@@ -180,15 +192,20 @@ def npy2features():
     # plt.imshow(im)
     # plt.show()
 
-    data = {}
-    # data['per_color_avg'] = per_color_avg(img)
-    # data['hog'] = hog_get(reshaped_img)
-    # data['daisy'] = daisy_get(img)
-    data['color_hist'] = color_hist(reshaped_img)
-    # data['first_pixel'] = first_pixel(img)
-    data['cnn'] = cnn_get(img, cnn_model)
-    with open(features_fname, 'wb') as f:
-      pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+    try: 
+      data = {}
+      # data['per_color_avg'] = per_color_avg(img)
+      # data['hog'] = hog_get(reshaped_img)
+      # data['daisy'] = daisy_get(img)
+      # data['color_hist'] = color_hist(reshaped_img)
+      # data['first_pixel'] = first_pixel(img)
+      data['cnn'] = cnn_get(img, cnn_model)
+      with open(features_fname, 'wb') as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+    except Exception as e:
+      print("Failed to featurize image " + img_fname)
+      print(e)
+
 
     avg_elapsed = print_timing(t0, avg_elapsed, "npy2features", N, i)
 
@@ -213,7 +230,8 @@ def concat_features():
 
     # Copy data into row
     for feature_name, value in curr.items():
-      concatenated[feature_name][i,:] = value
+      if feature_name in concatenated:
+        concatenated[feature_name][i,:] = value
 
     avg_elapsed = print_timing(t0, avg_elapsed, "concat", N, i)
 
@@ -223,18 +241,20 @@ def concat_features():
     pickle_write_concat_file(BASE_DIR, feature_name, img_fnames, value)
 
 
-########## Run Main ############
-t1 = time.time()
-imgs2npy()
-npy2features();
-concat_features();
-t2 = time.time()
-print(t2-t1)
+if __name__ == '__main__':
 
-########## Test load summary data ############
-img_fnames = get_img_fnames()
-N = len(img_fnames)
-concat_fname = feature_fname_get('cnn')
-with open(concat_fname, 'rb') as f:
-  data = pickle.load(f)
+  ########## Run Main ############
+  t1 = time.time()
+  imgs2npy()
+  npy2features();
+  concat_features();
+  t2 = time.time()
+  print(t2-t1)
+
+  ########## Test load summary data ############
+  img_fnames = get_img_fnames()
+  N = len(img_fnames)
+  concat_fname = feature_fname_get('cnn')
+  with open(concat_fname, 'rb') as f:
+    data = pickle.load(f)
 
