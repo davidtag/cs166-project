@@ -25,8 +25,8 @@ class LSH:
         self.b = int(b)
         self.M = int(M)
         #self.B = int(B/2)
-        assert(self.b >= 10 and self.b <= 5000)
-        assert(self.M >= 1  and self.M <= 100)
+#         assert(self.b >= 10 and self.b <= 5000)
+#         assert(self.M >= 1  and self.M <= 1000)
         #assert(self.B >= 0  and self.B <=300)
         
         # Store local copy of inputs vectors : (d,n)
