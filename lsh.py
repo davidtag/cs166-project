@@ -3,7 +3,7 @@ import copy
 import time
 
 class LSH:
-    def __init__(self, X, b, M, B=50):
+    def __init__(self, X, b, M, B):
         """
         Initialize an LSH class with a dataset X
         and hyperparameters b and M.
@@ -138,7 +138,7 @@ class LSH:
         V = (H_permute*pos).sum(axis=1)
         return V
           
-    def approx_top_k(self,q,k=5,refine="hamming"):
+    def approx_top_k(self,q,k,refine="hamming"):
         """
         Returns the top-k matches in the dataset
         for a query q.
@@ -157,8 +157,7 @@ class LSH:
         d,m = q.shape
         assert(d == self.d)
         assert(refine in ["hamming","innerprod"])
-        #t_start = time.time()
-
+        
         # Hash the query : (b,m) 
         H_q = self._get_hash(q)
         
@@ -191,9 +190,6 @@ class LSH:
             #Add matches to set
             for j in range(m):
                 candidates[j] |= set(idx[:,j])
-
-        #t_end = time.time()
-        #print(t_end-t_start)
         
         # Get top-k
         ans = [None for _ in range(m)]
@@ -216,7 +212,7 @@ class LSH:
             return ans[0]
         return ans
     
-    def exact_top_k(self,q,k=5):
+    def exact_top_k(self,q,k):
         ip = (q.T@self.X)[0] #inner products
         ip_argsort = np.argsort(ip)[::-1][:k] #sort decreasing
         return ip_argsort
