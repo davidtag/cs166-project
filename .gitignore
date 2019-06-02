@@ -2,7 +2,7 @@
 *imgs_raw_npy/
 .ipynb_checkpoints/
 archive/
-imnet-val/imgs/
+imnet-val/val/
 query/
 queries/
 imnet-test/

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from imageio import imread
 from skimage.transform import resize
 from statsmodels.stats.proportion import proportion_confint
+import copy
 
 class data_generator:
     def __init__ (self,n,d,normalize=True):
@@ -57,6 +58,10 @@ class dataset:
         plt.imshow(self.get_img(idx))
         plt.axis('off')
         plt.gca().set_aspect('equal')
+        
+    def get_features(self,idx):
+        return copy.deepcopy(self.X[:,idx:idx+1])
+
         
 def cos_sim(X,q):
     """
@@ -130,3 +135,6 @@ def binom_conf(b,probs,complement=False):
     counts = np.array(mean,dtype=np.int32)
     ci = [_ for _ in proportion_confint(counts,b,0.05,"wilson")]
     return ci
+
+        
+    
