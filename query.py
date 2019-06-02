@@ -215,16 +215,20 @@ class query:
 def pareto_frontier(Xs, Ys, maxX = True, maxY = True):
     myList = sorted([[Xs[i], Ys[i]] for i in range(len(Xs))], reverse=maxX)
     p_front = [myList[0]]    
-    for pair in myList[1:]:
+    idxs = []
+    for i, pair in enumerate(myList[1:]):
         if maxY: 
             if pair[1] >= p_front[-1][1]:
                 p_front.append(pair)
+                idxs.append(i)
         else:
             if pair[1] <= p_front[-1][1]:
                 p_front.append(pair)
+                idxs.append(i)
+                
     p_frontX = [pair[0] for pair in p_front]
     p_frontY = [pair[1] for pair in p_front]
-    return p_frontX, p_frontY
+    return p_frontX, p_frontY, idxs
         
 def param_search(data, queries, Ls, bs, es, N_queries):
     k = 10  #top-k nearest neighbors
@@ -255,7 +259,6 @@ def param_search(data, queries, Ls, bs, es, N_queries):
             t1 = time.time()
             query_obj = query(data=data, queries_dataset=queries, hash_bits=b, 
                               permutations=Ms[e_idx])
-    #         print("precomp", time.time() - t1)
             t1 = time.time()
             for L_idx,L in enumerate(Ls):
                 t, ndgc = query_obj.time_and_compare(N_queries, N_neighbor_candidates=L, k_report=k)
@@ -267,7 +270,6 @@ def param_search(data, queries, Ls, bs, es, N_queries):
                 Ls_rep[b_idx, e_idx, L_idx] = L
                 print("{:6d}, {:6d}, {:6d}, {:5d}, {:5.1f}, {:5d}, {:5d}, {:8.3f}, {:8.3f}".format(
                     b_idx, e_idx, L_idx, b, e, M, L, t, ndgc))
-    #         print("query", time.time() - t1, (time.time() - t1)/N_queries/len(Ls))
     
     out = {"ts": ts, "ndgcs": ndgcs, 
            "bs_rep": bs_rep,
@@ -284,7 +286,19 @@ def plot_search(results, N_data, N_queries, axlims=None):
     
     x = ts.flatten()
     y = ndgcs.flatten()
-    optX, optY = pareto_frontier(x, y, maxX = False)
+    optX, optY, idxs = pareto_frontier(x, y, maxX = False)
+    
+    b = results['bs_rep'].flatten()
+    e = results['es_rep'].flatten()
+    M = results['Ms_rep'].flatten()
+    L = results['Ls_rep'].flatten()
+    print("Optimal points")
+    print("{:>3},{:>4},{:>3},{:>3},{:>5},{:>6}".format(
+        "b","e","M","L","t","ndgc"))
+    for i in idxs:
+        print("{:3.0f},{:4.1f},{:3.0f},{:3.0f},{:5.2f},{:6.3f}".format(
+            b[i], e[i], M[i], L[i], x[i],y[i]))
+
     plt.plot(optX, optY, '-b')
 
     plt.plot(x, y, 'xb')
@@ -294,6 +308,7 @@ def plot_search(results, N_data, N_queries, axlims=None):
     if axlims:
         plt.axis(axlims)
     plt.show()
+    return idxs
 
 def plot_param_search(results, idx, N_data, N_queries, axlims=None):
     ts = results["ts"]
@@ -342,11 +357,12 @@ def plot_param_search(results, idx, N_data, N_queries, axlims=None):
     plt.xlabel('msec')
     plt.ylabel('ndgc')
     plt.title('N_data = {}, N_queries = {}\n{}'.format(N_data, N_queries, title_str))
-    plt.axis(axlims)
+    if axlims:
+        plt.axis(axlims)
     plt.show()
 
 
-    plt.figure(figsize=(5,10))
+    plt.figure(figsize=(5,7))
     ax1 = plt.subplot(2,1,1)
     plt.title('N_data = {}, N_queries = {}'.format(N_data, N_queries))
     ax2 = plt.subplot(2,1,2)
