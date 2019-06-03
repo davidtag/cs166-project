@@ -166,7 +166,8 @@ class query:
             plt.bar([i],score)
             plt.text(i,score+0.01,str(round(score,3)),horizontalalignment="center")
         plt.xticks(np.arange(i+1),self.ndcg_names)
-        plt.ylabel("Normalized Discounted Cumulative Gain")
+        plt.ylabel("NDCG")
+        plt.savefig("NDCG-50000", dpi=300)
         plt.show()
         
     def histograms(self):
@@ -315,7 +316,17 @@ def plot_search(results, N_data, N_queries, axlims=None):
     x = ts.flatten()
     y = ndgcs.flatten()
     optX, optY, idxs = pareto_frontier(x, y, maxX = False)
-    
+    b = results['bs_rep'].flatten()
+    e = results['es_rep'].flatten()
+    M = results['Ms_rep'].flatten()
+    L = results['Ls_rep'].flatten()
+    print("Optimal points")
+    print("{:>3},{:>4},{:>3},{:>3},{:>5},{:>6}".format(
+        "b","e","M","L","t","ndgc"))
+    for i, idx in enumerate(idxs):
+        print("{:3.0f},{:4.1f},{:3.0f},{:3.0f},{:5.2f},{:6.3f}".format(
+            b[idx], e[idx], M[idx], L[idx], optX[i], optY[i]))
+        
     x = np.append(x, 100)
     x = np.append(0, x)
     y = np.append(y, 1)
@@ -324,16 +335,7 @@ def plot_search(results, N_data, N_queries, axlims=None):
     hull = ConvexHull(pts)
     convex_hull_plot_2d(hull)
     
-    b = results['bs_rep'].flatten()
-    e = results['es_rep'].flatten()
-    M = results['Ms_rep'].flatten()
-    L = results['Ls_rep'].flatten()
-    print("Optimal points")
-    print("{:>3},{:>4},{:>3},{:>3},{:>5},{:>6}".format(
-        "b","e","M","L","t","ndgc"))
-    for i in idxs:
-        print("{:3.0f},{:4.1f},{:3.0f},{:3.0f},{:5.2f},{:6.3f}".format(
-            b[i], e[i], M[i], L[i], x[i],y[i]))
+
 
 #     plt.plot(optX, optY, '-b')
 
