@@ -60,6 +60,7 @@ class query:
         ndcg_3_lsh_ip   = np.zeros((N_queries))
         ndcg_4_random   = np.zeros((N_queries))
         ndcg_5_randompp = np.zeros((N_queries))
+        gain_opt = np.zeros((N_queries))
         
         for q_index in range(N_queries):            
             self.query_idx(q_index, N_neighbor_candidates, k_report)
@@ -85,6 +86,10 @@ class query:
             ndcg_5_randompp[q_index] = self.ndcg(rank_5_randompp)
             
 
+            w = get_weights(self.k)
+            s_opt = self.sims_dec[:self.k]
+            gain_opt[q_index] = np.inner(100**s_opt,w)
+
         self.ndcg_all   = [
             ndcg_4_random.mean(),
             ndcg_5_randompp.mean(),
@@ -100,7 +105,9 @@ class query:
                            "LSH w/ \nSimilarity Refinement",
                            "Linear Similarity"]
     
-        return times.mean(), ndcg_3_lsh_ip.mean()
+        
+    
+        return times.mean(), ndcg_3_lsh_ip.mean(), gain_opt
     
     def ndcg_analysis(self):
         assert self.sims is not None
@@ -261,7 +268,7 @@ def param_search(data, queries, Ls, bs, es, N_queries):
                               permutations=Ms[e_idx])
             t1 = time.time()
             for L_idx,L in enumerate(Ls):
-                t, ndgc = query_obj.time_and_compare(N_queries, N_neighbor_candidates=L, k_report=k)
+                t, ndgc, _ = query_obj.time_and_compare(N_queries, N_neighbor_candidates=L, k_report=k)
                 ts[b_idx,e_idx,L_idx] = t
                 ndgcs[b_idx,e_idx,L_idx] = ndgc
                 bs_rep[b_idx, e_idx, L_idx] = b
