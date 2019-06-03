@@ -20,10 +20,10 @@ IMSIZE = (224, 224)
 # BASE_DIR = "./imnet-100"
 # BASE_DIR = "./imnet-val"
 # BASE_DIR = "/Volumes/oddish1tb/cs166-project/imnet-val"
-# BASE_DIR = "/Volumes/oddish1tb/cs166-project/imnet-test"
+BASE_DIR = "/Volumes/oddish1tb/cs166-project/imnet-test"
 # BASE_DIR = "./imnet-test"
-BASE_DIR = "./imnet-test-1000"
-NMAX = 1000
+# BASE_DIR = "./imnet-test-1000"
+NMAX = 150000
 
 def mkdir_safe(path):
   if not os.path.exists(path):

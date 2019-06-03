@@ -160,13 +160,14 @@ class query:
         self.ndcg_names = ["Random","Random w/ \nSimilarity Refinement","Linear Hamming","LSH w/ \nHamming Refinement",
                       "LSH w/ \nSimilarity Refinement","Linear Similarity"]
 
-    def ndgc_plot(self):
+    def ndcg_plot(self):
         plt.figure(figsize=(15,5))
         for i,(score,name) in enumerate(zip(self.ndcg_all,self.ndcg_names)):
             plt.bar([i],score)
             plt.text(i,score+0.01,str(round(score,3)),horizontalalignment="center")
         plt.xticks(np.arange(i+1),self.ndcg_names)
         plt.ylabel("NDCG")
+        plt.tight_layout()
         plt.savefig("NDCG-{}".format(self.model.X.shape[1]), dpi=300)
         plt.show()
         
@@ -177,16 +178,18 @@ class query:
 #         plt.legend()
         plt.xlabel("Cosine Similarity")
         plt.ylabel("Probabililty Density")
+        plt.tight_layout()
         plt.savefig("hist-{}".format(self.model.X.shape[1]), dpi=300)
         plt.show()
         
         #Distribution of Similarity Scores with overlay of LSH results
         rank_3_lsh_ip = self.approx_top_k(refine="innerprod")
         plt.hist(self.sims,bins=25,alpha=0.9,density=True,label="all")
-        plt.hist(self.sims[rank_3_lsh_ip],alpha=0.9,density=True,label="lsh")
+        plt.hist(self.sims[rank_3_lsh_ip],alpha=0.9,density=True,label="LSH")
         plt.legend()
         plt.xlabel("Cosine Similarity")
         plt.ylabel("Probabililty Density")
+        plt.tight_layout()
         plt.savefig("hist-LSH-{}".format(self.model.X.shape[1]), dpi=300)
         plt.show()
 
@@ -240,6 +243,7 @@ class query:
                 self.data.plt_img(rank_3_lsh_ip[j])
 
         plt.subplots_adjust(wspace=0.1, hspace=0.1)
+        plt.tight_layout()
         plt.show()
         
         
@@ -271,7 +275,7 @@ def param_search(data, queries, Ls, bs, es, N_queries):
         Ms.append(round(2*N_data**(1/(1+e))))
 
     ts = np.zeros((len(bs), len(es), len(Ls)))
-    ndgcs = np.zeros((len(bs), len(es), len(Ls)))
+    ndcgs = np.zeros((len(bs), len(es), len(Ls)))
     bs_rep = np.zeros((len(bs), len(es), len(Ls)))
     es_rep = np.zeros((len(bs), len(es), len(Ls)))
     Ms_rep = np.zeros((len(bs), len(es), len(Ls)))
@@ -282,7 +286,7 @@ def param_search(data, queries, Ls, bs, es, N_queries):
     print("es,", es)
     print("Ms,", Ms)
     print("{:>6}, {:>6}, {:>6}, {:>5}, {:>5}, {:>5}, {:>5}, {:>8}, {:>8}".format(
-        "b_idx", "e_idx", "L_idx", "b", "eps", "M", "L", "t (msec)", "ndgc"))
+        "b_idx", "e_idx", "L_idx", "b", "eps", "M", "L", "t (ms)", "ndcg"))
 
     for b_idx,b in enumerate(bs):
         for e_idx,e in enumerate(es):
@@ -292,17 +296,17 @@ def param_search(data, queries, Ls, bs, es, N_queries):
                               permutations=Ms[e_idx])
             t1 = time.time()
             for L_idx,L in enumerate(Ls):
-                t, ndgc, _ = query_obj.time_and_compare(N_queries, N_neighbor_candidates=L, k_report=k)
+                t, ndcg, _ = query_obj.time_and_compare(N_queries, N_neighbor_candidates=L, k_report=k)
                 ts[b_idx,e_idx,L_idx] = t
-                ndgcs[b_idx,e_idx,L_idx] = ndgc
+                ndcgs[b_idx,e_idx,L_idx] = ndcg
                 bs_rep[b_idx, e_idx, L_idx] = b
                 es_rep[b_idx, e_idx, L_idx] = e
                 Ms_rep[b_idx, e_idx, L_idx] = M
                 Ls_rep[b_idx, e_idx, L_idx] = L
                 print("{:6d}, {:6d}, {:6d}, {:5d}, {:5.1f}, {:5d}, {:5d}, {:8.3f}, {:8.3f}".format(
-                    b_idx, e_idx, L_idx, b, e, M, L, t, ndgc))
+                    b_idx, e_idx, L_idx, b, e, M, L, t, ndcg))
     
-    out = {"ts": ts, "ndgcs": ndgcs, 
+    out = {"ts": ts, "ndcgs": ndcgs, 
            "bs_rep": bs_rep,
            "es_rep": es_rep,
            "Ms_rep": Ms_rep,
@@ -313,10 +317,10 @@ def param_search(data, queries, Ls, bs, es, N_queries):
 
 def plot_search(results, N_data, N_queries, axlims=None):
     ts = results["ts"]
-    ndgcs = results["ndgcs"]
+    ndcgs = results["ndcgs"]
     
     x = ts.flatten()
-    y = ndgcs.flatten()
+    y = ndcgs.flatten()
     optX, optY, idxs = pareto_frontier(x, y, maxX = False)
     b = results['bs_rep'].flatten()
     e = results['es_rep'].flatten()
@@ -324,7 +328,7 @@ def plot_search(results, N_data, N_queries, axlims=None):
     L = results['Ls_rep'].flatten()
     print("Optimal points")
     print("{:>3},{:>4},{:>3},{:>3},{:>5},{:>6}".format(
-        "b","e","M","L","t","ndgc"))
+        "b","e","M","L","t","ndcg"))
     for i, idx in enumerate(idxs):
         print("{:3.0f},{:4.1f},{:3.0f},{:3.0f},{:5.2f},{:6.3f}".format(
             b[idx], e[idx], M[idx], L[idx], optX[i], optY[i]))
@@ -342,42 +346,43 @@ def plot_search(results, N_data, N_queries, axlims=None):
 #     plt.plot(optX, optY, '-b')
 
 #     plt.plot(x, y, '.b')
-    plt.xlabel('msec')
-    plt.ylabel('NDGC')
-    plt.title('Dataset Size N = {}'.format(N_data, N_queries))
+    plt.xlabel('Time (msec/query)')
+    plt.ylabel('NDCG')
+    # plt.title('Dataset Size N = {}'.format(N_data, N_queries))
     if axlims:
         plt.axis(axlims)
         
+    plt.tight_layout()
     plt.savefig("op_{}-{}".format(N_data, N_queries), dpi=300)
     plt.show()
     return idxs
 
 def plot_param_search(results, idx, N_data, N_queries, axlims=None):
     ts = results["ts"]
-    ndgcs = results["ndgcs"]
+    ndcgs = results["ndcgs"]
     
     n,m,l = ts.shape
     i,j,k = n//2, m//2, l//2
     
     if idx == 0:
         x = ts[:,j,k]
-        y = ndgcs[:,j,k]
+        y = ndcgs[:,j,k]
         title_str = "Vary b"
     elif idx == 1:
         x = ts[i,:,k]
-        y = ndgcs[i,:,k]
+        y = ndcgs[i,:,k]
         title_str = "Vary eps"
 
     elif idx == 2:
         x = ts[i,j,:]
-        y = ndgcs[i,j,:]
+        y = ndcgs[i,j,:]
         title_str = "Vary L"
 
     plt.plot(x,y, 'x-')
     
-    plt.xlabel('msec')
-    plt.ylabel('ndgc')
-    plt.title('N_data = {}, N_queries = {}\n{}'.format(N_data, N_queries, title_str))
+    plt.xlabel('Time (msec/query)')
+    plt.ylabel('NDCG')
+    # plt.title('N_data = {}, N_queries = {}\n{}'.format(N_data, N_queries, title_str))
     if axlims:
         plt.axis(axlims)
     plt.show()
@@ -386,54 +391,63 @@ def plot_param_search(results, idx, N_data, N_queries, axlims=None):
     if idx == 0:
         for j in range(m):
             for k in range(l):
-                plt.plot(ts[:, j, k], ndgcs[:, j, k], 'x-')
+                plt.plot(ts[:, j, k], ndcgs[:, j, k], 'x-')
     elif idx == 1:
         for i in range(n):
             for k in range(l):
-                plt.plot(ts[i, :, k], ndgcs[i, :, k], 'x-')
+                plt.plot(ts[i, :, k], ndcgs[i, :, k], 'x-')
     elif idx == 2:
         for i in range(n):
             for j in range(m):
-                plt.plot(ts[i, j, :], ndgcs[i, j, :], 'x-')
+                plt.plot(ts[i, j, :], ndcgs[i, j, :], 'x-')
         
-    plt.xlabel('msec')
-    plt.ylabel('ndgc')
-    plt.title('N_data = {}, N_queries = {}\n{}'.format(N_data, N_queries, title_str))
+    plt.xlabel('Time (msec/query)')
+    plt.ylabel('NDCG')
+    # plt.title('N_data = {}, N_queries = {}\n{}'.format(N_data, N_queries, title_str))
     if axlims:
         plt.axis(axlims)
     plt.show()
 
+    seaborn.set_style({'axes.grid' : False})
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
 
-    plt.figure(figsize=(5,7))
-    ax1 = plt.subplot(2,1,1)
-    plt.title('N_data = {}, N_queries = {}'.format(N_data, N_queries))
-    ax2 = plt.subplot(2,1,2)
+#     plt.title('N_data = {}, N_queries = {}'.format(N_data, N_queries))
 
     if idx == 0:
         x_str = "b"
         param = results["bs_rep"]
         for j in range(m):
             for k in range(l):
-                ax1.plot(param[:,j,k], ts[:, j, k], 'x-')
-                ax2.plot(param[:,j,k], ndgcs[:, j, k], 'x-')               
+                ax1.plot(param[:,j,k], ts[:, j, k], 'x-g')
+                ax2.plot(param[:,j,k], ndcgs[:, j, k], 'x-b')               
     elif idx == 1:
-        x_str = "eps"
+        x_str = "epsilon"
         param = results["es_rep"]
         for i in range(n):
             for k in range(l):
-                ax1.plot(param[i,:,k], ts[i, :, k], 'x-')
-                ax2.plot(param[i,:,k], ndgcs[i, :, k], 'x-')    
+                ax1.plot(param[i,:,k], ts[i, :, k], 'x-g')
+                ax2.plot(param[i,:,k], ndcgs[i, :, k], 'x-b')    
     elif idx == 2:
         x_str = "L"
         param = results["Ls_rep"]
         for i in range(n):
             for j in range(m):
-                ax1.plot(param[i,j,:], ts[i, j, :], 'x-')
-                ax2.plot(param[i,j,:], ndgcs[i, j, :], 'x-')                
+                ax1.plot(param[i,j,:], ts[i, j, :], 'x-g')
+                ax2.plot(param[i,j,:], ndcgs[i, j, :], 'x-b')                
 
-    ax1.set_ylabel('msec')
-    ax2.set_ylabel('ndgc')
-    ax2.set_xlabel(x_str)
+#     ax1.spines['left'].set_color('g')
+#     ax2.spines['right'].set_color('b')
+    ax1.tick_params(axis='y', colors='g')
+    ax2.tick_params(axis='y', colors='b')
+    
+    ax1.set_ylabel('Time (msec/query)', color='g')
+    ax2.set_ylabel('NDCG', color='b')
+    ax1.set_xlabel(x_str)
 #     ax2.set_ylim([0.7, 1.0])
+    ax1.grid()
+
+    plt.tight_layout()
+    plt.savefig("sensitivty-"+x_str, dpi=300)
 
     plt.show()
