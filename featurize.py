@@ -245,7 +245,7 @@ if __name__ == '__main__':
 
   ########## Run Main ############
   t1 = time.time()
-  imgs2npy()
+  # imgs2npy()
   npy2features();
   concat_features();
   t2 = time.time()

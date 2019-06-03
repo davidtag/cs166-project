@@ -23,7 +23,7 @@ IMSIZE = (224, 224)
 class NN:
   def __init__(self, fname):
     t1 = time.time()
-    print("Loadiong pickle...")
+    print("Loading pickle...")
     with open(fname, 'rb') as f:
       data = pickle.load(f)
     t2 = time.time()
