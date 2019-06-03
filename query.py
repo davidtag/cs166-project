@@ -167,25 +167,27 @@ class query:
             plt.text(i,score+0.01,str(round(score,3)),horizontalalignment="center")
         plt.xticks(np.arange(i+1),self.ndcg_names)
         plt.ylabel("NDCG")
-        plt.savefig("NDCG-50000", dpi=300)
+        plt.savefig("NDCG-{}".format(self.model.X.shape[1]), dpi=300)
         plt.show()
         
     def histograms(self):
         assert self.sims is not None
         #Distribution of Similarity Scores
-        plt.hist(self.sims,bins=25,alpha=0.3,density=True,label="all")
-        plt.legend()
+        plt.hist(self.sims,bins=25,alpha=0.9,density=True,label="all")
+#         plt.legend()
         plt.xlabel("Cosine Similarity")
         plt.ylabel("Probabililty Density")
+        plt.savefig("hist-{}".format(self.model.X.shape[1]), dpi=300)
         plt.show()
         
         #Distribution of Similarity Scores with overlay of LSH results
         rank_3_lsh_ip = self.approx_top_k(refine="innerprod")
-        plt.hist(self.sims,bins=25,alpha=0.3,density=True,label="all")
-        plt.hist(self.sims[rank_3_lsh_ip],alpha=0.3,density=True,label="lsh")
+        plt.hist(self.sims,bins=25,alpha=0.9,density=True,label="all")
+        plt.hist(self.sims[rank_3_lsh_ip],alpha=0.9,density=True,label="lsh")
         plt.legend()
         plt.xlabel("Cosine Similarity")
         plt.ylabel("Probabililty Density")
+        plt.savefig("hist-LSH-{}".format(self.model.X.shape[1]), dpi=300)
         plt.show()
 
         
