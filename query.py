@@ -1,5 +1,9 @@
 from lsh import *
 from utils import *
+import seaborn
+from scipy.spatial import ConvexHull, convex_hull_plot_2d
+
+seaborn.set()
 
 class query:
     def __init__(self, data=None, queries_dataset=None, hash_bits=None, permutations=None):
@@ -53,6 +57,24 @@ class query:
                 
     def time_and_compare(self, N_queries, N_neighbor_candidates=None, k_report=None):
         times = np.zeros((N_queries))
+        
+        
+#                 assert self.sims is not None
+#         #Distribution of Similarity Scores
+#         plt.hist(self.sims,bins=25,alpha=0.3,density=True,label="all")
+#         plt.legend()
+#         plt.xlabel("Cosine Similarity")
+#         plt.ylabel("Probabililty Density")
+#         plt.show()
+        
+#         #Distribution of Similarity Scores with overlay of LSH results
+#         rank_3_lsh_ip = self.approx_top_k(refine="innerprod")
+#         plt.hist(self.sims,bins=25,alpha=0.3,density=True,label="all")
+#         plt.hist(self.sims[rank_3_lsh_ip],alpha=0.3,density=True,label="lsh")
+#         plt.legend()
+#         plt.xlabel("Cosine Similarity")
+#         plt.ylabel("Probabililty Density")
+#         plt.show()
         
         ndcg_0_opt      = np.zeros((N_queries))
         ndcg_1_hd       = np.zeros((N_queries))
@@ -239,7 +261,6 @@ def pareto_frontier(Xs, Ys, maxX = True, maxY = True):
         
 def param_search(data, queries, Ls, bs, es, N_queries):
     k = 10  #top-k nearest neighbors
-    N_queries = 10
 
     Ms = []
     N_data = data.X.shape[1]
@@ -295,6 +316,14 @@ def plot_search(results, N_data, N_queries, axlims=None):
     y = ndgcs.flatten()
     optX, optY, idxs = pareto_frontier(x, y, maxX = False)
     
+    x = np.append(x, 100)
+    x = np.append(0, x)
+    y = np.append(y, 1)
+    y = np.append(0, y)
+    pts = np.vstack((x,y)).T
+    hull = ConvexHull(pts)
+    convex_hull_plot_2d(hull)
+    
     b = results['bs_rep'].flatten()
     e = results['es_rep'].flatten()
     M = results['Ms_rep'].flatten()
@@ -306,14 +335,16 @@ def plot_search(results, N_data, N_queries, axlims=None):
         print("{:3.0f},{:4.1f},{:3.0f},{:3.0f},{:5.2f},{:6.3f}".format(
             b[i], e[i], M[i], L[i], x[i],y[i]))
 
-    plt.plot(optX, optY, '-b')
+#     plt.plot(optX, optY, '-b')
 
-    plt.plot(x, y, 'xb')
+#     plt.plot(x, y, '.b')
     plt.xlabel('msec')
-    plt.ylabel('ndgc')
-    plt.title('N_data = {}, N_queries = {}'.format(N_data, N_queries))
+    plt.ylabel('NDGC')
+    plt.title('Dataset Size N = {}'.format(N_data, N_queries))
     if axlims:
         plt.axis(axlims)
+        
+    plt.savefig("op_{}-{}".format(N_data, N_queries), dpi=300)
     plt.show()
     return idxs
 
