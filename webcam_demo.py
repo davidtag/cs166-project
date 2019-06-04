@@ -60,9 +60,9 @@ X = data.X
 d,n = X.shape
 
 b = 200 #hash bits
-M = 20  #number of permutations
+M = 50  #number of permutations
 k = 3
-L = 4
+L = 16
 model = LSH(X=X,b=b,M=M)
 
 cnn_model = cnn.cnn("mobilenet")
@@ -77,7 +77,7 @@ while(True):
   if not pause:
     # Capture frame-by-frame
     ret, frame = cap.read()
-    # frame = cv2.flip(frame, 0)
+    # frame = cv2.flip(frame, 1)
 
     # frame = image_resize(frame, width = DISPLAY_SIZE)
     resized = cv2.resize(frame, DISPLAY_SIZE, interpolation = cv2.INTER_AREA)
@@ -126,12 +126,13 @@ while(True):
       img = cv2.resize(img, DISPLAY_SIZE, interpolation = cv2.INTER_AREA)
       imgs_exact.append(img)
 
-
-    row1 = np.hstack((resized, imgs[0]))
-    row1 = np.hstack((row1, imgs[1]))
     # row2 = np.hstack((imgs[1], imgs[2]))
-    row2 = np.hstack((empty, imgs_exact[0]))
-    row2 = np.hstack((row2, imgs_exact[1]))
+    row1 = np.hstack((resized, imgs_exact[0]))
+    row1 = np.hstack((row1, imgs_exact[1]))
+
+    row2 = np.hstack((empty, imgs[0]))
+    row2 = np.hstack((row2, imgs[1]))
+
     display = np.vstack((row1, row2))
     cv2.imshow('frame', display)
     y = cv2.waitKey(0)
